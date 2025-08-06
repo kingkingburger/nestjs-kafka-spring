@@ -1,12 +1,26 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Inject, OnModuleInit } from '@nestjs/common';
+import { ClientKafka } from '@nestjs/microservices';
 
 @Controller()
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+export class AppController implements OnModuleInit {
+  constructor(
+    @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
+  ) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  async onModuleInit() {
+    this.kafkaClient.subscribeToResponseOf('my-first-topic');
+    await this.kafkaClient.connect();
+  }
+
+  @Get('send-message')
+  sendMessage() {
+    const message = {
+      text: `Hello spring! it is ${new Date().toISOString()}`,
+      id: Math.floor(Math.random() * 1000),
+    };
+
+    this.kafkaClient.emit('my-first-topic', JSON.stringify(message));
+
+    return { status: 'Messsage send!', data: message };
   }
 }
