@@ -1,0 +1,9 @@
+spring.application.name=demo
+spring:
+  kafka:
+    consumer:
+      bootstrap-servers: localhost:29092
+      group-id: spring-consumer-group # 컨슈머 그룹 ID
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
