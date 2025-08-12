@@ -1,23 +1,47 @@
-version: "2"
-services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - 22181:2181
+# version: "2"
+# services:
+#   zookeeper:
+#     image: confluentinc/cp-zookeeper:latest
+#     environment:
+#       ZOOKEEPER_CLIENT_PORT: 2181
+#       ZOOKEEPER_TICK_TIME: 2000
+#     ports:
+#       - 22181:2181
 
+#   kafka:
+#     image: confluentinc/cp-kafka:latest
+#     depends_on:
+#       - zookeeper
+#     ports:
+#       - 29092:29092
+#     environment:
+#       KAFKA_BROKER_ID: 1
+#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+version: '3.8'
+services:
   kafka:
     image: confluentinc/cp-kafka:latest
-    depends_on:
-      - zookeeper
     ports:
-      - 29092:29092
+      - "29092:29092"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # KRaft 모드 설정: broker와 controller 역할을 모두 수행
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      # 노드 ID 설정 (Broker ID 대신 사용)
+      KAFKA_NODE_ID: 1
+      # KRaft 컨트롤러 쿼럼 설정 (자신을 컨트롤러로 지정)
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      # 컨트롤러 리스너 이름 설정
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      # 내부/외부 통신을 위한 리스너 설정
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      # 기타 설정
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # KRaft 모드 초기화를 위한 클러스터 ID (임의의 고유한 base64 값)
+      CLUSTER_ID: 'MkU1qYWpSlyr421x4xN2SA'
