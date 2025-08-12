@@ -23,4 +23,16 @@ export class AppController implements OnModuleInit {
 
     return { status: 'Messsage send!', data: message };
   }
+
+  @Get('send-alarm')
+  sendAlarm() {
+    const message = {
+      text: `alarm Message it is ${new Date().toISOString()}`,
+      id: Math.floor(Math.random() * 1000),
+    };
+
+    this.kafkaClient.emit('my-first-topic', JSON.stringify(message));
+
+    return { status: 'Messsage send!', data: message };
+  }
 }
