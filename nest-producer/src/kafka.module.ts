@@ -14,6 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           options: {
             client: {
               clientId: 'nest-producer',
+              connectionTimeout: 3000, // 3초로 늘려보기
               brokers: [
                 `${configService.get('KAFKA_HOST')}:${configService.get(
                   'KAFKA_PORT',
