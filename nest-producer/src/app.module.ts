@@ -1,25 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule } from '@nestjs/config';
+import { AlarmModule } from './alarm/alarm.module';
+import { KafkaModule } from './kafka.module';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: 'KAFKA_SERVICE',
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: 'nest-producer',
-            brokers: ['localhost:29092'],
-          },
-          consumer: {
-            groupId: 'nest-producer-group',
-          },
-        },
-      },
-    ]),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    KafkaModule,
+    AlarmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

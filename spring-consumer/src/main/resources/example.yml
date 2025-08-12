@@ -1,0 +1,36 @@
+spring:
+  # PostgreSQL 데이터베이스 설정
+  datasource:
+    # DB_HOST, DB_PORT, DB_NAME 환경 변수가 없으면 localhost:5432/your_database 사용
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:your_database}
+    # DB_USERNAME 환경 변수가 없으면 your_username 사용
+    username: ${DB_USERNAME:your_username}
+    # DB_PASSWORD 환경 변수가 없으면 your_password 사용
+    password: ${DB_PASSWORD:your_password}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: update # 개발 환경에서는 update 또는 create 사용
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  # Kafka 설정
+  kafka:
+    # KAFKA_BOOTSTRAP_SERVERS 환경 변수가 없으면 localhost:9092 사용
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    # Consumer 설정
+    consumer:
+      group-id: alarm-group # 컨슈머 그룹 ID
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*" # DTO 패키지 신뢰 설정
+    # Producer 설정
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
