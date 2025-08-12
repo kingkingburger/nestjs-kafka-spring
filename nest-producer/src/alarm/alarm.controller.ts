@@ -19,7 +19,7 @@ export class AlarmController implements OnModuleInit {
       id: Math.floor(Math.random() * 1000),
     };
 
-    this.kafkaClient.emit('my-first-topic', JSON.stringify(message));
+    this.kafkaClient.emit('alarm', JSON.stringify(message));
 
     return { status: 'Message send!', data: message };
   }

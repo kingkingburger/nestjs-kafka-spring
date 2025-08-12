@@ -1,14 +1,14 @@
-package com.example.demo;
+package playground.alarm;
 
 import java.io.IOException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
-public class KafkaConsumer {
+public class AlarmConsumer {
 
-  @KafkaListener(topics = "my-first-topic", groupId = "spring-consumer-group")
+  @KafkaListener(topics = "alarm", groupId = "alarm-group")
   public void consume(String message) throws IOException {
-    System.out.println(String.format("Consumed message: %s", message));
+    System.out.println(String.format("알람: %s", message));
   }
 }
