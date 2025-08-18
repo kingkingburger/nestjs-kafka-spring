@@ -23,8 +23,6 @@ public class AlarmConsumer {
     alarmDto.setMessage(kafkaMessage.getText());
     alarmDto.setCreatedAt(LocalDateTime.now()); // 수신한 시각을 생성 시각으로 설정
 
-    System.out.println("변환된 AlarmDto: " + alarmDto);
-
     // 변환된 DTO를 사용하여 비즈니스 로직 처리
     alarmService.processAlarm(alarmDto);
   }
