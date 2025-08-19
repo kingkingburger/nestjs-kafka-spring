@@ -96,3 +96,11 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+k6를 docker compose로 활용하기 위함
+
+- k6를 킨다
+- mount된 script.js를 아래 명령어로 실행한다
+```shell
+docker compose exec k6 k6 run //scripts/script.js
+```
