@@ -1,47 +1,121 @@
-# version: "2"
-# services:
-#   zookeeper:
-#     image: confluentinc/cp-zookeeper:latest
-#     environment:
-#       ZOOKEEPER_CLIENT_PORT: 2181
-#       ZOOKEEPER_TICK_TIME: 2000
-#     ports:
-#       - 22181:2181
+version: "3.8"
 
-#   kafka:
-#     image: confluentinc/cp-kafka:latest
-#     depends_on:
-#       - zookeeper
-#     ports:
-#       - 29092:29092
-#     environment:
-#       KAFKA_BROKER_ID: 1
-#       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-#       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-#       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-version: '3.8'
 services:
-  kafka:
-    image: confluentinc/cp-kafka:latest
+  # Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    hostname: zookeeper
+    container_name: zookeeper
     ports:
-      - "29092:29092"
+      - "2181:2181"
     environment:
-      # KRaft 모드 설정: broker와 controller 역할을 모두 수행
-      KAFKA_PROCESS_ROLES: 'broker,controller'
-      # 노드 ID 설정 (Broker ID 대신 사용)
-      KAFKA_NODE_ID: 1
-      # KRaft 컨트롤러 쿼럼 설정 (자신을 컨트롤러로 지정)
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
-      # 컨트롤러 리스너 이름 설정
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      # 내부/외부 통신을 위한 리스너 설정
-      KAFKA_LISTENERS: 'PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:29092'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
-      # 기타 설정
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka-network
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9997:9997"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # KRaft 모드 초기화를 위한 클러스터 ID (임의의 고유한 base64 값)
-      CLUSTER_ID: 'MkU1qYWpSlyr421x4xN2SA'
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.rmi.port=9997
+    networks:
+      - kafka-network
+
+  # Kafka Exporter for Prometheus
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: kafka-exporter
+    command:
+      - "--kafka.server=kafka:29092"
+      - "--web.listen-address=0.0.0.0:9308"
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    networks:
+      - kafka-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - kafka-network
+
+  # Kafka Topics Creator (초기 토픽 생성용)
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-init
+    depends_on:
+      - kafka
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      # Kafka가 준비될 때까지 대기
+      echo 'Waiting for Kafka to be ready...'
+      while ! kafka-topics --bootstrap-server kafka:29092 --list > /dev/null 2>&1; do
+        echo 'Kafka is not ready yet, waiting...'
+        sleep 2
+      done
+
+      echo 'Creating topics...'
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic test-topic --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic user-events --partitions 5 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic order-events --partitions 3 --replication-factor 1
+
+      echo 'Topics created successfully:'
+      kafka-topics --bootstrap-server kafka:29092 --list
+      "
+    networks:
+      - kafka-network
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  kafka-network:
+    driver: bridge

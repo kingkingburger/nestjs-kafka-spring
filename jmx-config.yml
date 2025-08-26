@@ -1,0 +1,36 @@
+startDelaySeconds: 0
+ssl: false
+lowercaseOutputName: false
+lowercaseOutputLabelNames: false
+
+rules:
+  - pattern: kafka.server<type=(.+), name=(.+)><>Value
+    name: kafka_server_$1_$2
+    type: GAUGE
+
+  - pattern: kafka.log<type=LogSize, name=Size, topic=(.+), partition=(.+)><>Value
+    name: kafka_log_size
+    type: GAUGE
+    labels:
+      topic: "$1"
+      partition: "$2"
+
+  - pattern: kafka.consumer<type=(.+), name=(.+), client-id=(.+)><>Value
+    name: kafka_consumer_$1_$2
+    type: GAUGE
+    labels:
+      client_id: "$3"
+
+  - pattern: kafka.producer<type=(.+), name=(.+), client-id=(.+)><>Value
+    name: kafka_producer_$1_$2
+    type: GAUGE
+    labels:
+      client_id: "$3"
+
+  - pattern: java.lang<type=Memory><HeapMemoryUsage>used
+    name: jvm_memory_heap_used
+    type: GAUGE
+
+  - pattern: java.lang<type=Memory><NonHeapMemoryUsage>used
+    name: jvm_memory_nonheap_used
+    type: GAUGE
