@@ -64,7 +64,7 @@
             const meta = document.createElement('div');
             meta.className = 'meta';
             // spring에서 보낸 'alarmId' 필드를 사용
-            meta.textContent = `ID: ${alarm.alarmId} | 시간: ${new Date().toLocaleTimeString()}`;
+            meta.textContent = `ID: ${alarm.alarmId} | 시간: ${new Date(alarm.createdAt).toLocaleTimeString()}`;
 
             item.appendChild(content);
             item.appendChild(meta);
