@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5500")
 @RequiredArgsConstructor
 // 웹 요청을 받는 컨트롤러
 @RestController
