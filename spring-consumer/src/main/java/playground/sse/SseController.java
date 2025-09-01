@@ -13,7 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 // 웹 요청을 받는 컨트롤러
 @RestController
 @RequestMapping("/api/sse")
-class SseController {
+public class SseController {
 
   private final SseEmitterManager sseEmitterManager;
 
