@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>실시간 방송 알람 테스트</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #notifications { list-style: none; padding: 0; }
+        .notification {
+            background-color: #e6ffed;
+            border-left: 5px solid #68d391;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .notification p { margin: 0; }
+        .notification .meta { font-size: 0.8em; color: #888; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>실시간 방송 알람</h1>
+    <ul id="notifications">
+    </ul>
+
+    <script>
+        // 새로고침 할 때마다 새로운 연결이 맺어집니다.
+        const clientId = Date.now(); 
+        console.log(`Connecting with Client ID: ${clientId}`);
+
+        // EventSource를 생성하여 서버의 /subscribe/{clientId} 엔드포인트에 연결
+        const springServerUrl = `http://localhost:8080/api/sse/subscribe/${clientId}`;
+        console.log(`Requesting to: ${springServerUrl}`);
+        const eventSource = new EventSource(springServerUrl);
+
+        // 서버와 성공적으로 연결되었을 때
+        eventSource.addEventListener('connect', (event) => {
+            console.log('SSE 연결 성공:', event.data);
+        });
+
+        // 'alarm' 이벤트 수신 (이 부분은 변경 없음)
+        eventSource.addEventListener('alarm', (event) => {
+            console.log('새로운 방송 알람 수신:', event.data);
+            const alarmData = JSON.parse(event.data);
+            displayNotification(alarmData);
+        });
+
+        // 에러 발생 시
+        eventSource.onerror = (error) => {
+            console.error('EventSource 에러 발생:', error);
+        };
+
+        // 알람을 화면에 표시하는 함수 (alarmData의 필드명에 주의)
+        function displayNotification(alarm) {
+            const notificationsList = document.getElementById('notifications');
+            const item = document.createElement('li');
+            item.className = 'notification';
+
+            const content = document.createElement('p');
+            // spring에서 보낸 'message' 필드를 사용
+            content.textContent = alarm.message || '새로운 알람이 도착했습니다.';
+
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            // spring에서 보낸 'alarmId' 필드를 사용
+            meta.textContent = `ID: ${alarm.alarmId} | 시간: ${new Date(alarm.createdAt).toLocaleTimeString()}`;
+
+            item.appendChild(content);
+            item.appendChild(meta);
+
+            notificationsList.prepend(item);
+        }
+    </script>
+</body>
+</html>
