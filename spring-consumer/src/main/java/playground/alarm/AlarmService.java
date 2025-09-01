@@ -32,12 +32,11 @@ public class AlarmService {
     alarmRepository.save(alarm);
     System.out.println("Alarm saved to PostgreSQL.");
 
-    // 2. SSE를 통해 클라이언트에게 실시간 알람 전송 (새로 추가된 부분)
-    // AlarmDto에 알람을 받을 사용자의 ID가 포함되어 있어야 합니다. (예: alarmDto.getAlarmId())
+    // 2. SSE를 통해 모든 클라이언트에게 실시간 알람 전송
     sseEmitterManager.broadcast(alarmDto);
     System.out.println("Sent real-time alarm via SSE to user: " + alarmDto.getAlarmId());
 
-    // 3. Kafka에 확인 메시지 전송 (기존 로직)
+    // 3. Kafka에 확인 메시지 전송
     String confirmationMessage =
         "Alarm with ID " + alarmDto.getAlarmId() + " has been successfully processed.";
     kafkaTemplate.send(CONFIRM_TOPIC, confirmationMessage);
