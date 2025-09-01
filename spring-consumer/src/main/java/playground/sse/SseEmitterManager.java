@@ -42,8 +42,8 @@ public class SseEmitterManager {
       } catch (IOException e) {
         // 클라이언트와의 연결이 끊겼을 경우, IOException이 발생
         System.err.println("Error sending to client " + id + ": " + e.getMessage());
-        // 해당 emitter를 맵에서 제거
-        emitters.remove(id);
+        // onCompletion 콜백에서 emitter가 제거되므로 여기서는 complete()만 호출합니다.
+        emitter.complete();
       }
     });
   }
